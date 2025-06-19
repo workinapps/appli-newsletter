@@ -1,0 +1,68 @@
+services:
+  listmonk:
+    image: 'listmonk/listmonk:latest'
+    environment:
+      - SERVICE_FQDN_LISTMONK_9000
+      - 'LISTMONK_app__address=0.0.0.0:9000'
+      - LISTMONK_db__host=postgres
+      - LISTMONK_db__name=listmonk
+      - LISTMONK_db__user=$SERVICE_USER_POSTGRES
+      - LISTMONK_db__password=$SERVICE_PASSWORD_POSTGRES
+      - LISTMONK_db__port=5432
+      - TZ=Etc/UTC
+    volumes:
+      - 'listmonk-data:/listmonk/uploads'
+      - 'listmonk-static:/listmonk/static'
+    ports:
+      - '3023:9000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: "./listmonk --static-dir=/listmonk/static"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - '-q'
+        - '--spider'
+        - 'http://127.0.0.1:9000'
+      interval: 60s
+      timeout: 120s
+      retries: 10
+  listmonk-initial-database-setup:
+    image: 'listmonk/listmonk:latest'
+    command: './listmonk --install --yes --idempotent'
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - LISTMONK_db__host=postgres
+      - LISTMONK_db__name=listmonk
+      - LISTMONK_db__user=$SERVICE_USER_POSTGRES
+      - LISTMONK_db__password=$SERVICE_PASSWORD_POSTGRES
+      - LISTMONK_db__port=5432
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - POSTGRES_DB=listmonk
+      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - POSTGRES_USER=$SERVICE_USER_POSTGRES
+    volumes:
+      - 'pg-data:/var/lib/postgresql/data'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}'
+      interval: 60s
+      timeout: 120s
+      retries: 10
+  static-files-fetch:
+    image: alpine/git:latest
+    working_dir: /listmonk/static
+    entrypoint: sh
+    environment:
+      - GIT_TOKEN=${GIT_TOKEN}
+    volumes:
+      - 'listmonk-static:/listmonk/static'
+    command: -c "if [ -d .git ]; then git pull; else git clone https://${GIT_TOKEN}@github.com/workinapps/appli-newsletter .; fi"
