@@ -2,14 +2,12 @@
 {{ template "header" .}}
 
 <section class="center">
-	<a href="admin" class="button">{{ L.T "users.login" }}</a>
-
 	<div class="home-options">
 		{{ if .EnablePublicSubPage }}
-			<a href="{{ .RootURL }}/subscription/form">{{ L.T "public.sub" }}</a>
+			<a href="{{ .RootURL }}/subscription/form" class="button">{{ L.T "public.sub" }}</a>
 		{{ end }}
 		{{ if .EnablePublicArchive }}
-		    <a href="{{ .RootURL }}/archive">{{ L.T "public.archiveTitle" }}</a>
+		    <a href="{{ .RootURL }}/archive" class="button">{{ L.T "public.archiveTitle" }}</a>
 		{{ end }}
 	</div>
 </section>
