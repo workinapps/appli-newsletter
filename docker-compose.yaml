@@ -18,7 +18,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: "./listmonk --static-dir=/listmonk/static"
+    command: './listmonk --static-dir=/listmonk/static'
     healthcheck:
       test:
         - CMD
@@ -58,11 +58,12 @@ services:
       timeout: 120s
       retries: 10
   static-files-fetch:
-    image: alpine/git:latest
-    working_dir: /listmonk/static
+    image: 'alpine/git:latest'
+    restart: 'no'
+    working_dir: '/listmonk/static'
     entrypoint: sh
     environment:
       - GIT_TOKEN=${GIT_TOKEN}
     volumes:
       - 'listmonk-static:/listmonk/static'
-    command: -c "if [ -d .git ]; then git pull; else git clone https://${GIT_TOKEN}@github.com/workinapps/appli-newsletter .; fi"
+    command: -c "if [ -d .git ]; then git pull; else git clone https://${GIT_TOKEN}@github.com/workinapps/appli-newsletter .; fi; exit 0"
